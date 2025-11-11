@@ -5,22 +5,25 @@ import { createStockTx, getProducts, getStock } from '../components/api';
 export default function StockPage(){
   const [form,setForm]=useState({ productId:'', quantity:0, type:'In' });
   const [products,setProducts]=useState<any[]>([]);
+  const [items,setItems]=useState<any[]>([]);
+  const [refreshKey,setRefreshKey]=useState(0);
 
   useEffect(()=>{ getProducts().then((p:any)=> setProducts(p.items||p)); },[]);
 
-  const fetchItems = useCallback(()=> getStock(), []);
+  const load = useCallback(async ()=>{ const data = await getStock(); setItems(data.items||data); },[]);
+  useEffect(()=>{ load(); },[refreshKey, load]);
 
-  const onSave = async ()=>{ await createStockTx({...form, quantity:Number(form.quantity)}); window.location.reload(); };
+  const onSave = async ()=>{ await createStockTx({...form, quantity:Number(form.quantity)}); setForm({productId:'', quantity:0, type:'In'}); setRefreshKey(k=>k+1); };
 
   return (
     <div>
-      <CrudTable title="Stock Transactions" fetchItems={fetchItems}
+      <CrudTable title="Stock Transactions" fetchItems={async()=>items}
         columns={[{key:'productName', header:'Product'},{key:'type', header:'Type'},{key:'quantity', header:'Qty'},{key:'date', header:'Date'}]}
         toolbar={<></>}
       />
-      <div style={{marginTop:'1rem'}}>
+      <div className="card-form">
         <h3>New Transaction</h3>
-        <div style={{display:'flex', gap:'.5rem', flexWrap:'wrap'}}>
+        <div className="form-grid">
           <select value={form.productId} onChange={e=>setForm({...form, productId:e.target.value})}>
             <option value="">-- Product --</option>
             {products.map(p=> <option key={p.id} value={p.id}>{p.name}</option>)}

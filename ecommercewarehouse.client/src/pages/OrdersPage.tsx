@@ -3,57 +3,51 @@ import { CrudTable } from '../components/CrudTable';
 import { createOrder, getOrders, getProducts, updateOrderStatus } from '../components/api';
 
 export default function OrdersPage(){
-  const [editing,setEditing]=useState<any|null>(null);
   const [form,setForm]=useState({ customerName:'', items:[] as any[] });
   const [products,setProducts]=useState<any[]>([]);
+  const [items,setItems]=useState<any[]>([]);
+  const [refreshKey,setRefreshKey]=useState(0);
 
   useEffect(()=>{ getProducts().then((p:any)=> setProducts(p.items||p)); },[]);
 
-  const fetchItems = useCallback(()=> getOrders(), []);
+  const load = useCallback(async ()=>{ const data = await getOrders(); setItems(data.items||data); },[]);
+  useEffect(()=>{ load(); },[refreshKey, load]);
 
-  const onEdit = (row:any)=>{ setEditing(row); };
-
-  const onSave = async ()=>{
-    await createOrder(form); window.location.reload();
-  };
+  const onSave = async ()=>{ await createOrder(form); setForm({customerName:'', items:[]}); setRefreshKey(k=>k+1); };
 
   const setItem = (idx:number, patch:any)=>{
-    const items = [...form.items]; items[idx] = { ...(items[idx]||{productId:'', quantity:1, unitPrice:0}), ...patch }; setForm({...form, items});
+    const its = [...form.items]; its[idx] = { ...(its[idx]||{productId:'', quantity:1, unitPrice:0}), ...patch }; setForm({...form, items:its});
   };
 
   return (
     <div>
-      <CrudTable title="Orders" fetchItems={fetchItems} onEdit={onEdit}
+      <CrudTable title="Orders" fetchItems={async()=>items}
         columns={[{key:'orderNumber', header:'Order #'}, {key:'customerName', header:'Customer'}, {key:'totalAmount', header:'Total'}, {key:'status', header:'Status'}]}
         actions={(row:any)=> (
-          <select defaultValue={row.status} onChange={async e=>{ await updateOrderStatus(row.id, e.target.value); window.location.reload(); }}>
+          <select defaultValue={row.status} onChange={async e=>{ await updateOrderStatus(row.id, e.target.value); setRefreshKey(k=>k+1); }}>
             {['Pending','Paid','Shipped','Cancelled'].map(s=> <option key={s} value={s}>{s}</option>)}
           </select>
         )}
-        toolbar={<button className="btn primary" onClick={()=>{ setEditing(null); setForm({customerName:'', items:[]}); }}>New</button>}
+        toolbar={<></>}
       />
-      {(editing!==undefined) && (
-        <div style={{marginTop:'1rem'}}>
-          <h3>Create Order</h3>
-          <div style={{display:'flex', gap:'.5rem', flexDirection:'column'}}>
-            <input placeholder="Customer Name" value={form.customerName} onChange={e=>setForm({...form, customerName:e.target.value})}/>
-            <div>
-              <button className="btn" onClick={()=> setForm({...form, items:[...form.items, {productId:'', quantity:1, unitPrice:0}]})}>Add Item</button>
+      <div className="card-form">
+        <h3>Create Order</h3>
+        <div className="form-grid">
+          <input placeholder="Customer Name" value={form.customerName} onChange={e=>setForm({...form, customerName:e.target.value})}/>
+          <button className="btn" onClick={()=> setForm({...form, items:[...form.items, {productId:'', quantity:1, unitPrice:0}]})}>Add Item</button>
+          {form.items.map((it:any, idx:number)=>(
+            <div key={idx} className="inline-item">
+              <select value={it.productId} onChange={e=> setItem(idx, { productId:e.target.value })}>
+                <option value="">-- Product --</option>
+                {products.map(p=> <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+              <input placeholder="Qty" type="number" value={it.quantity} onChange={e=> setItem(idx, { quantity:Number(e.target.value) })} />
+              <input placeholder="Unit Price" type="number" value={it.unitPrice} onChange={e=> setItem(idx, { unitPrice:Number(e.target.value) })} />
             </div>
-            {form.items.map((it:any, idx:number)=>(
-              <div key={idx} style={{display:'flex', gap:'.5rem', alignItems:'center'}}>
-                <select value={it.productId} onChange={e=> setItem(idx, { productId:e.target.value })}>
-                  <option value="">-- Product --</option>
-                  {products.map(p=> <option key={p.id} value={p.id}>{p.name}</option>)}
-                </select>
-                <input placeholder="Qty" type="number" value={it.quantity} onChange={e=> setItem(idx, { quantity:Number(e.target.value) })} />
-                <input placeholder="Unit Price" type="number" value={it.unitPrice} onChange={e=> setItem(idx, { unitPrice:Number(e.target.value) })} />
-              </div>
-            ))}
-            <button className="btn primary" onClick={onSave}>Save Order</button>
-          </div>
+          ))}
+          <button className="btn primary" onClick={onSave}>Save Order</button>
         </div>
-      )}
+      </div>
     </div>
   );
 }
