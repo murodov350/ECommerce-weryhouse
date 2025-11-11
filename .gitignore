@@ -1,41 +1,53 @@
-# Prerequisites
-*.d
-
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Linker files
-*.ilk
-
-# Debugger Files
+# Visual Studio files
+.vs/
+*.suo
+*.user
+*.userprefs
+*.log
+*.bak
+*.cache
+*.ncb
+*.opendb
 *.pdb
+*.obj
+*.sbr
+*.tlog
+*.trx
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
+# Build results
+[Dd]ebug/
+[Rr]elease/
+[Bb]in/
+[Oo]bj/
 *.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
 *.exe
-*.out
-*.app
+*.ilk
+*.lib
+*.exp
+*.winmd
+*.appx
+*.appxbundle
+*.appxsym
+*.msi
+*.msp
+*.pfx
+*.snk
+*.vmdk
+*.vhd
+*.vhdx
+*.psmdcp
 
-# debug information files
-*.dwo
+# Packages
+packages/
+*.nupkg
+*.snk
+
+# Rider/ReSharper files
+.idea/
+*.DotSettings
+*.user
+
+# Other common files
+Thumbs.db
+Desktop.ini
+.DS_Store
