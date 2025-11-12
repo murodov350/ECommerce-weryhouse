@@ -1,0 +1,17 @@
+@import 'bootstrap';
+
+body {
+  background-color: #f7f7f7;
+  font-size: 14px;
+}
+.navbar, .topbar { background: #2A3F54 !important; }
+.sidebar { background: #2A3F54 !important; color:#ecf0f1; }
+.sidebar .nav-link{ color:#ecf0f1; }
+.sidebar .nav-link:hover{ background:#1ABB9C; color:#fff; }
+.btn-primary, .btn.primary { background:#1ABB9C; border:none; }
+.btn-primary:hover{ background:#169F85; }
+.table th { background:#ededed; }
+.page-header h1 { font-size:20px; font-weight:600; color:#2A3F54; }
+.card-form { background:#fff; padding:1rem; margin-top:1rem; border:1px solid #dcdcdc; border-radius:8px; }
+.form-grid { display:flex; flex-wrap:wrap; gap:.5rem; }
+.inline-item { display:flex; gap:.5rem; margin-top:.5rem; }

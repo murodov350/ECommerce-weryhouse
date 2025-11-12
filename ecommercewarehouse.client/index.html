@@ -2,12 +2,33 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ecommercewarehouse.client</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ecommerce Warehouse</title>
+    <!-- Core CSS (local vendor) -->
+    <link href="/vendor/bootstrap.min.css" rel="stylesheet" />
+    <link href="/vendor/fontawesome.min.css" rel="stylesheet" />
+    <link href="/vendor/toastr.min.css" rel="stylesheet" />
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <!-- Core JS (local vendor) -->
+    <script src="/vendor/jquery.min.js"></script>
+    <script src="/vendor/popper.min.js"></script>
+    <script src="/vendor/bootstrap.bundle.min.js"></script>
+    <script src="/vendor/toastr.min.js"></script>
+    <script>
+      // Fallbacks if vendor files missing
+      (function(){
+        function addJs(src){ var s=document.createElement('script'); s.src=src; s.async=false; document.body.appendChild(s); }
+        function addCss(href){ var l=document.createElement('link'); l.rel='stylesheet'; l.href=href; document.head.appendChild(l); }
+        if(typeof window.jQuery==='undefined'){ addJs('https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js'); }
+        if(typeof window.bootstrap==='undefined'){ addJs('https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js'); }
+        if(!document.querySelector('link[href*="toastr"]')){ addCss('https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css'); addJs('https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js'); }
+      })();
+      // Toastr defaults
+      window.toastr = window.toastr || { success: console.log, error: console.error, info: console.log, warning: console.warn };
+      if(window.toastr) { window.toastr.options = { positionClass: 'toast-bottom-right', timeOut: 2000, progressBar: true, closeButton: true } }
+    </script>
   </body>
 </html>

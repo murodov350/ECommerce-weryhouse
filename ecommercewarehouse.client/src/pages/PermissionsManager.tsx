@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { apiFetch } from '../auth.ts';
+
+declare global { interface Window { toastr:any; bootstrap:any } }
 
 interface Role { id: string; name: string; }
 interface Permission { id: string; module: string; action: string; description?: string; }
 
-const baseModules = ['User','Role'];
 const crud = ['View','Create','Update','Delete'];
 
 export default function PermissionsManager(){
@@ -21,71 +22,65 @@ export default function PermissionsManager(){
 
   useEffect(()=>{ if(selectedRole) loadRolePerms(selectedRole); },[selectedRole]);
 
-  function refreshPermissions(){
-    apiFetch('/api/permissions/catalog').then(async r=>{ if(r.ok) setPermissions(await r.json()); });
-  }
+  function refreshPermissions(){ apiFetch('/api/permissions/catalog').then(async r=>{ if(r.ok) setPermissions(await r.json()); }); }
+  async function loadRolePerms(roleId:string){ const r=await apiFetch('/api/permissions/role/'+roleId); if(r.ok){ const ids:string[]=await r.json(); setRolePerms(new Set(ids)); } }
 
-  async function loadRolePerms(roleId:string){
-    const r = await apiFetch('/api/permissions/role/'+roleId);
-    if(r.ok){ const ids:string[] = await r.json(); setRolePerms(new Set(ids)); }
-  }
+  const modules = useMemo(()=> Array.from(new Set(permissions.map(p=>p.module))).sort(), [permissions]);
+  const mapBy = (m:string,a:string)=> permissions.find(p=> p.module===m && p.action===a);
 
-  const toggle = (permId:string)=>{
-    const next = new Set(rolePerms);
-    if(next.has(permId)) next.delete(permId); else next.add(permId);
-    setRolePerms(next);
+  const toggle = (permId:string|undefined)=>{
+    if(!permId) return; const next = new Set(rolePerms); if(next.has(permId)) next.delete(permId); else next.add(permId); setRolePerms(next);
+    window.toastr?.success('Updated selection');
   };
 
-  async function generateBase(){
-    // Ensure base CRUD permissions exist
-    for(const m of baseModules){
-      for(const a of crud){
-        const exists = permissions.find(p=>p.module===m && p.action===a);
-        if(!exists){
-          await apiFetch('/api/permissions/catalog',{ method:'POST', body: JSON.stringify({ module:m, action:a }) });
-        }
-      }
-    }
-    refreshPermissions();
-  }
-
-  async function save(){
-    if(!selectedRole) return;
-    setSaving(true);
-    const filtered = permissions.filter(p=> rolePerms.has(p.id));
-    await apiFetch('/api/permissions/assign',{ method:'POST', body: JSON.stringify({ roleId: selectedRole, permissionIds: filtered.map(f=>f.id) }) });
+  async function save(){ if(!selectedRole) return; setSaving(true); const filtered = permissions.filter(p=> rolePerms.has(p.id));
+    const res = await apiFetch('/api/permissions/assign',{ method:'POST', body: JSON.stringify({ roleId: selectedRole, permissionIds: filtered.map(f=>f.id) }) });
     setSaving(false);
+    if(res.ok) window.toastr?.success('Permissions saved'); else window.toastr?.error('Save failed');
   }
 
   return (
-    <div style={{marginTop:'2rem'}}>
-      <h2>Permissions Manager</h2>
-      <div style={{display:'flex', gap:'1rem', flexWrap:'wrap'}}>
-        <div>
-          <label>Role:</label><br/>
-          <select value={selectedRole} onChange={e=>setSelectedRole(e.target.value)}>
-            <option value="">-- select --</option>
+    <div className="container-fluid py-2">
+      <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <h2 className="mb-0">Permissions</h2>
+        <div className="d-flex gap-2">
+          <select className="form-select" value={selectedRole} onChange={e=>setSelectedRole(e.target.value)}>
+            <option value="">Select role</option>
             {roles.map(r=> <option key={r.id} value={r.id}>{r.name}</option>)}
           </select>
+          <button className="btn btn-primary" disabled={!selectedRole || saving} onClick={save}>{saving? 'Saving...':'Save'}</button>
         </div>
-        <button className="btn primary" onClick={generateBase}>Generate Base CRUD</button>
-        <button className="btn primary" onClick={save} disabled={!selectedRole || saving}>{saving? 'Saving...':'Save'}</button>
       </div>
 
-      <table className="table" style={{marginTop:'1rem'}}>
-        <thead><tr><th>Module</th><th>Action</th><th>Assign</th></tr></thead>
-        <tbody>
-          {permissions.map(p=> (
-            <tr key={p.id}>
-              <td>{p.module}</td>
-              <td>{p.action}</td>
-              <td>
-                {selectedRole && <input type="checkbox" checked={rolePerms.has(p.id)} onChange={()=>toggle(p.id)} />}
-              </td>
+      <div className="table-responsive">
+        <table className="table table-bordered align-middle">
+          <thead className="table-light">
+            <tr>
+              <th style={{minWidth:180}}>Module</th>
+              {crud.map(a=> <th key={a} className="text-center" style={{width:120}}>{a}</th>)}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {modules.map(m=> (
+              <tr key={m}>
+                <td className="fw-semibold">{m}</td>
+                {crud.map(a=>{
+                  const perm = mapBy(m,a);
+                  const checked = perm? rolePerms.has(perm.id): false;
+                  return (
+                    <td key={a} className="text-center">
+                      <input type="checkbox" className="form-check-input" disabled={!selectedRole || !perm} checked={checked} onChange={()=> toggle(perm?.id)} />
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+            {modules.length===0 && (
+              <tr><td colSpan={1+crud.length} className="text-center text-muted">No permissions</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
